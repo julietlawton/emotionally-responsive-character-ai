@@ -1,21 +1,26 @@
 "use client"
-
-import { useEffect, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import * as THREE from 'three';
-import { Html } from '@react-three/drei';
+import { useEffect, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import * as THREE from "three";
+import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-
-type Emotion = "Neutral" | "Happy" | "Sad" | "Angry" | "Fearful" | "Surprised" | "Disgusted";
-
-type Reaction = {
-  expression?: Record<string, number>;
-  animation?: Record<string, number>; 
-}
+import { Emotion, DirectedSentiment, EmotionPrediction, SentimentPrediction } from "@/lib/types";
 
 // Robot model
-function Robot({ emotion }: { emotion: Emotion }) {
+function Robot({
+  emotion,
+  sentiment,
+  robotColor,
+  reactionTable,
+  isUserSpeaking
+}: {
+  emotion: EmotionPrediction,
+  sentiment: SentimentPrediction,
+  robotColor: string,
+  reactionTable: any,
+  isUserSpeaking: boolean
+}) {
   const group = useRef<THREE.Group>(null);
   const actions = useRef<{ [key: string]: THREE.AnimationAction }>({});
 
@@ -29,8 +34,13 @@ function Robot({ emotion }: { emotion: Emotion }) {
   // Ref for head object with morph targets
   const headRef = useRef<THREE.Mesh | null>(null);
 
+  // Emotion and sentiment refs
   const emotionRef = useRef<Emotion>("Neutral");
-  const lastEmotion = useRef<Emotion>('Neutral');
+  const lastEmotion = useRef<Emotion>("Neutral");
+  const sentimentRef = useRef<DirectedSentiment>("Neutral");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isUserSpeakingRef = useRef(false);
 
   // Color-able parts of the model
   const partsToColor = [
@@ -47,17 +57,6 @@ function Robot({ emotion }: { emotion: Emotion }) {
     { name: "HandR_1" },
     { name: "HandL_1" },
   ];
-
-  const reactionMap: Record<Emotion, Reaction> = {
-    Neutral: { expression: { Angry: 0, Surprised: 0, Sad: 0 } },
-    Happy: { expression: { Angry: 0.5, Surprised: 0.3, Sad: 0.15 }, animation: { "Yes": 1.1 } },
-    Sad: { expression: { Sad: 1 } },
-    Angry: { expression: { Angry: 1 } },
-    Fearful: { expression: { Surprised: 0.75 }, animation: { "Death": 0.5 } },
-    Surprised: { expression: { Surprised: 1 }, animation: { "Jump": 1.2 } },
-    Disgusted: { expression: { Angry: 1, Sad: 1 }, animation: { "No": 1.1 } },
-  };
-
 
   // Helper function to find the object with the morph targets for changing facial expression (Head_4)
   function findMeshWithMorphs(root: THREE.Object3D): THREE.Mesh | null {
@@ -76,9 +75,41 @@ function Robot({ emotion }: { emotion: Emotion }) {
     return found;
   }
 
+  // Track when user is speaking for micro-expressions
   useEffect(() => {
-    emotionRef.current = emotion;
-  }, [emotion]);
+    isUserSpeakingRef.current = isUserSpeaking;
+  }, [isUserSpeaking]);
+
+  // Handle changes to currently predicted emotion and sentiment
+  useEffect(() => {
+    // Only update sentiment and emotion if the model confidence is above 60%
+    if (emotion.confidence > 0.60) {
+      emotionRef.current = emotion.label;
+    }
+    if (sentiment.confidence > 0.60) {
+      sentimentRef.current = sentiment.label;
+    }
+  }, [emotion, sentiment]);
+
+  // Update expression and animations
+  useEffect(() => {
+    if (!reactionTable || !emotion || !sentiment) return;
+
+    // Get new reaction
+    const reaction = reactionTable[emotionRef.current]?.[sentimentRef.current];
+    if (!reaction) return;
+
+    // Clear any previous timeout
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    // Set timeout to reset emotion/sentiment to Neutral
+    if (reaction.duration) {
+      timeoutRef.current = setTimeout(() => {
+        emotionRef.current = "Neutral";
+        sentimentRef.current = "Neutral";
+      }, reaction.duration);
+    }
+  }, [emotion, sentiment, reactionTable]);
 
   // Load the robot model
   useEffect(() => {
@@ -88,9 +119,6 @@ function Robot({ emotion }: { emotion: Emotion }) {
       // Parse model
       const nodes = await gltf.parser.getDependencies("node");
       const animations = await gltf.parser.getDependencies("animation");
-      // const meshes = await gltf.parser.getDependencies('mesh')
-      // console.log("nodes", nodes)
-      // console.log("meshes", meshes)
 
       // Find Head_4 and set ref
       headRef.current = findMeshWithMorphs(nodes[0]);
@@ -115,7 +143,7 @@ function Robot({ emotion }: { emotion: Emotion }) {
         const material = (part.material as THREE.MeshStandardMaterial).clone();
 
         // Set the new color for this part
-        material.color.set("#4f63ad");
+        material.color.set(robotColor);
         part.material = material;
       }
     });
@@ -196,16 +224,34 @@ function Robot({ emotion }: { emotion: Emotion }) {
 
   // Handle facial expressions
   useFrame(() => {
+    // Get entry from the reaction table for this sentiment/emotion combo
     const emotion = emotionRef.current;
-    const reaction = reactionMap[emotion];
+    const sentiment = sentimentRef.current;
+    const emotionReactions = reactionTable?.[emotion];
+    if (!emotionReactions) {
+      console.warn(`Missing reactionTable entry for emotion: ${emotion}`);
+      return;
+    }
+    const reaction = emotionReactions[sentiment];
+    if (!reaction) {
+      console.warn(`Missing reaction for sentiment: ${sentiment} under emotion: ${emotion}`);
+      return;
+    }
     if (!reaction || !headRef.current) return;
 
+    // Get morph targets on head
     const { morphTargetDictionary: dict, morphTargetInfluences: infl } = headRef.current;
     if (!dict || !infl) return;
 
+    // For each of the morph targets, update their values based on the configuration for the current reaction
     for (const key of Object.keys(dict)) {
       const i = dict[key];
-      const targetValue = reaction.expression?.[key] ?? 0;
+      let targetValue = reaction.expression?.[key] ?? 0;
+
+      // Show micro-expression (raise eyebrows) when user starts talking
+      if (key === "Surprised" && isUserSpeakingRef.current) {
+        targetValue = Math.max(targetValue, 0.15);
+      }
 
       // Smooth transition
       infl[i] += (targetValue - infl[i]) * 0.1;
@@ -215,59 +261,75 @@ function Robot({ emotion }: { emotion: Emotion }) {
 
   // Handle animations
   useFrame(() => {
-    const current = emotionRef.current;
-    if (current !== lastEmotion.current) {
-      const reactionAnimation = reactionMap[current]?.animation;
+    const currentEmotion = emotionRef.current;
+    const currentSentiment = sentimentRef.current;
+    // Don't play the same animation twice in a row for the same emotion back to back
+    if (currentEmotion !== lastEmotion.current) {
+      // Get animation for this reaction, if there is one
+      const reactionAnimation = reactionTable[currentEmotion][currentSentiment]?.animation;
       if (reactionAnimation && animation && group.current) {
-
-        const [animationName, animationTimeScale] = Object.entries(reactionAnimation)[0];
+        const [animationName] = Object.entries(reactionAnimation)[0];
         const clip = animation.find(c => c.name === animationName);
 
+        // Play animation
         if (clip) {
           const action = mixer.clipAction(clip, group.current);
           action.reset();
           action.setLoop(THREE.LoopOnce, 1);
           action.clampWhenFinished = false;
-          action.timeScale = animationTimeScale;
+          action.timeScale = 1;
           action.fadeIn(0.2).play();
         }
       }
-
-      lastEmotion.current = current;
+      lastEmotion.current = currentEmotion;
     }
   });
 
   return (
     <>
-      {model ? (
+      {model && (
         // Set model position
         <group ref={group} scale={0.75} position={[0, -1.5, 0]}>
           <primitive object={model} />
         </group>
-      ) : (
-        // Display loading message while model loads
-        <Html>Loading robot...</Html>
       )}
     </>
   )
 }
 
-export default function RobotScene() {
-  const [expression, setExpression] = useState<Emotion>("Neutral");
+export default function RobotScene({
+  emotion,
+  sentiment,
+  color,
+  reactionTable,
+  isUserSpeaking
+}: {
+  emotion: EmotionPrediction,
+  sentiment: SentimentPrediction,
+  color: string,
+  reactionTable: any,
+  isUserSpeaking: boolean
+}) {
   return (
     <><div style={{ position: "absolute", top: 10, left: 10, zIndex: 100 }}>
-      <button onClick={() => setExpression("Neutral")}>Neutral</button><br></br>
-      <button onClick={() => setExpression("Happy")}>Happy</button><br></br>
-      <button onClick={() => setExpression("Sad")}>Sad</button><br></br>
-      <button onClick={() => setExpression("Angry")}>Angry</button><br></br>
-      <button onClick={() => setExpression("Fearful")}>Fearful</button><br></br>
-      <button onClick={() => setExpression("Surprised")}>Surprised</button><br></br>
-      <button onClick={() => setExpression("Disgusted")}>Disgusted</button><br></br>
-    </div><Canvas camera={{ position: [0, 1, 7], fov: 45 }}>
-        <ambientLight />
-        <directionalLight position={[2, 5, 2]} intensity={1} />
-        <Robot emotion={expression} />
-      </Canvas></>
+    </div>
+      {/* Create three.js scene */}
+      <Canvas camera={{ position: [0, 1, 7], fov: 45 }}>
+        {/* Scene lighting */}
+        <ambientLight intensity={0.2} />
+        <directionalLight position={[0, 5, 5]} intensity={2} />
+        {/* Robot model */}
+        <Robot
+          emotion={emotion}
+          sentiment={sentiment}
+          robotColor={color}
+          reactionTable={reactionTable}
+          isUserSpeaking={isUserSpeaking}
+        />
+        {/* Rotation controls */}
+        <OrbitControls enableZoom={false} />
+      </Canvas>
+    </>
 
   )
 }

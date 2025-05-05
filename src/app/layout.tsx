@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css";
+import { ConsoleLogProvider } from "@/app/context/console-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SER Character Expression",
-  description: "Demo for the SER character expression project",
+  title: "Emotionally Responsive Character AI Demo",
+  description: "Demo for the emotionally-responsive-character-ai project",
 };
 
 export default function RootLayout({
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ConsoleLogProvider>
+          {children}
+        </ConsoleLogProvider>
       </body>
     </html>
   );
