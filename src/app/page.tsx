@@ -46,7 +46,7 @@ export default function DemoPage() {
   // App console state
   const [consoleOpen, setConsoleOpen] = useState(true);
   const consoleRef = useRef<HTMLDivElement>(null);
-  const { logs } = useLog();
+  const { logs, setLogs } = useLog();
 
   // Audio component status state
   const [isLoading, setIsLoading] = useState(true);
@@ -168,6 +168,7 @@ export default function DemoPage() {
                   }
                   setEmotion({ label: "Neutral", confidence: 1 });
                   setSentiment({ label: "Neutral", confidence: 1 })
+                  setLogs([]);
                   setSelectedRobotIndex(1 - selectedRobotIndex);
                 }}
                 className="px-5 py-2 bg-black text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-800 transition"

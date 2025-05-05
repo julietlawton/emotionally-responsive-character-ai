@@ -9,6 +9,7 @@ export type ConsoleLogEntry = {
 export type ConsoleLogContextType = {
     logs: ConsoleLogEntry[];
     addLog: (entry: ConsoleLogEntry) => void;
+    setLogs: (logs: ConsoleLogEntry[]) => void;
 };
 
 const ConsoleLogContext = createContext<ConsoleLogContextType | undefined>(undefined);
@@ -24,7 +25,7 @@ export function ConsoleLogProvider({ children }: { children: React.ReactNode }) 
     }, []);
 
     return (
-        <ConsoleLogContext.Provider value={{ logs, addLog }}>
+        <ConsoleLogContext.Provider value={{ logs, addLog, setLogs }}>
             {children}
         </ConsoleLogContext.Provider>
     );
