@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import dynamic from "next/dynamic";
 import RealtimeChat from "@/app/components/realtime-chat";
 import { useEffect, useRef, useState } from "react";
@@ -96,10 +96,11 @@ export default function DemoPage() {
         setSERInferenceSession(ser);
         setDirectedSentimentInferenceSession(directedSentiment);
         tokenizerRef.current = tokenizer;
+        setIsLoading(false);
       } catch (e) {
         console.error("ONNX load error:", e);
-      } finally {
-        setIsLoading(false);
+        alert("There was an error loading the models. Please reload the page.");
+        return;
       }
     }
     loadModels();
