@@ -99,7 +99,7 @@ export default function DemoPage() {
         setIsLoading(false);
       } catch (e) {
         console.error("ONNX load error:", e);
-        alert("There was an error loading the models. Please reload the page.");
+        alert("There was an problem loading the models. Please reload the page.");
         return;
       }
     }
