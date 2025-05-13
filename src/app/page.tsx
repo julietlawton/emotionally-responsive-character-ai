@@ -42,6 +42,7 @@ export default function DemoPage() {
   const isInferenceBusy = useRef(false);
   const [emotion, setEmotion] = useState<EmotionPrediction>({ label: "Neutral", confidence: 1 });
   const [sentiment, setSentiment] = useState<SentimentPrediction>({ label: "Neutral", confidence: 1 });
+  const [modelLoadError, setModelLoadError] = useState(false);
 
   // App console state
   const [consoleOpen, setConsoleOpen] = useState(true);
@@ -100,6 +101,7 @@ export default function DemoPage() {
       } catch (e) {
         console.error("ONNX load error:", e);
         alert("There was an problem loading the models. Please reload the page.");
+        setModelLoadError(true);
         return;
       }
     }
@@ -142,10 +144,16 @@ export default function DemoPage() {
     <div className="relative w-full h-screen bg-gray-200 overflow-hidden">
       {/* Show loading spinner while the models and robot load */}
       {isLoading ? (
-        <div className="h-full w-full flex flex-col items-center justify-center">
-          <div className="text-2xl font-semibold mb-4">Setting Up...</div>
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-black border-solid"></div>
-        </div>
+        modelLoadError ? (
+          <div className="h-full w-full flex flex-col items-center justify-center">
+            <div className="text-2xl font-semibold mb-4">Please reload the page.</div>
+          </div>
+        ) : (
+          <div className="h-full w-full flex flex-col items-center justify-center">
+            <div className="text-2xl font-semibold mb-4">Setting Up...</div>
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-black border-solid"></div>
+          </div>
+        )
       ) : (
         <>
           <div className={`h-full flex items-center justify-center ${consoleOpen ? "pb-12" : ""}`}>
@@ -166,6 +174,7 @@ export default function DemoPage() {
                   if (mic.isMicActive) {
                     mic.stopMic();
                   }
+                  setIsUserSpeaking(false);
                   setEmotion({ label: "Neutral", confidence: 1 });
                   setSentiment({ label: "Neutral", confidence: 1 })
                   setLogs([]);
@@ -181,7 +190,14 @@ export default function DemoPage() {
         ${micState === "off" ? "bg-black hover:bg-gray-800"
                     : micState === "connecting" ? "bg-gray-400"
                       : "bg-red-600"}`}
-                onClick={micState === "ready" ? mic.stopMic : mic.startMic}
+                onClick={() => {
+                  if (micState === "ready") {
+                    setIsUserSpeaking(false);
+                    mic.stopMic();
+                  } else {
+                    mic.startMic();
+                  }
+                }}
                 disabled={micState === "connecting"}
               >
                 <MicrophoneIcon className="w-6 h-6 text-white" />
