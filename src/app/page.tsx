@@ -88,9 +88,9 @@ export default function DemoPage() {
       const ort = await import('onnxruntime-web');
       try {
         // Start speech emotion classifier session
-        const ser = await ort.InferenceSession.create("SER_fp32.onnx", { executionProviders: ['webgpu'] });
+        const ser = await ort.InferenceSession.create("SER_fp16.onnx", { executionProviders: ['webgpu'] });
         // Start sentiment classifier session
-        const directedSentiment = await ort.InferenceSession.create("DSR_fp32.onnx");
+        const directedSentiment = await ort.InferenceSession.create("DSR_fp16.onnx");
         // Load sentiment classifier tokenizer
         const tokenizer = await AutoTokenizer.from_pretrained("distilbert-base-uncased");
         setSERInferenceSession(ser);

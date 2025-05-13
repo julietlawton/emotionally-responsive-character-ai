@@ -174,7 +174,7 @@ export default function SentimentRecorder({
             
             // Get prediction logits
             const labels = ["Neutral", "Positive", "Negative"];
-            const logits = output.logits.data as Float32Array;
+            const logits = output.logits.data as Float16Array;
             const maxLogit = Math.max(...logits);
 
             // Compute softmax to turn logits into probabilities

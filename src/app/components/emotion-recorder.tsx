@@ -57,7 +57,7 @@ export default function EmotionRecorder({
 
             // Handle audio messages from the processor
             workletNode.port.onmessage = async (event) => {
-                const slice = new Float32Array(event.data);
+                const slice = new Float16Array(event.data);
 
                 // If a message is sent but the user is not speaking, ignore
                 if (!isUserSpeakingRef.current) {
@@ -100,7 +100,7 @@ export default function EmotionRecorder({
 
 // SER inference function
 async function runInference(
-    samples: Float32Array,
+    samples: Float16Array,
     inferenceSession: any,
     onEmotionDetected: (emotion: Emotion, confidence: number) => void,
     addLog: (log: ConsoleLogEntry) => void
@@ -116,7 +116,7 @@ async function runInference(
     const normalized = samples.map(x => (x - mean) / (std + 1e-5));
 
     // Create input tensor
-    const tensor = new ort.Tensor("float32", normalized, [1, normalized.length]);
+    const tensor = new ort.Tensor("float16", normalized, [1, normalized.length]);
 
     try {
         // Run SER model on the input tensor
@@ -131,7 +131,7 @@ async function runInference(
         });
 
         // Get prediction logits
-        const preds = results[inferenceSession.outputNames[0]].data as Float32Array;
+        const preds = results[inferenceSession.outputNames[0]].data as Float16Array;
         const logits = Array.from(preds);
         const maxLogit = Math.max(...logits);
 
