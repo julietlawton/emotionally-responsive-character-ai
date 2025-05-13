@@ -1,2 +1,4 @@
 public/DSR_fp32.onnx filter=lfs diff=lfs merge=lfs -text
 public/SER_fp32.onnx filter=lfs diff=lfs merge=lfs -text
+public/DSR_fp16.onnx filter=lfs diff=lfs merge=lfs -text
+public/SER_fp16.onnx filter=lfs diff=lfs merge=lfs -text
