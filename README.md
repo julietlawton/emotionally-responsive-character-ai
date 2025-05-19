@@ -1,8 +1,6 @@
 # Emotionally Responsive AI Avatars
 The goal of this project is to try to create a Next.js app with AI character avatars that feel emotionally responsive by using machine learning to detect affective signals (emotion, directed sentiment) from the user and map these signals to reactive facial expressions.
 
-![louisa_final](https://github.com/user-attachments/assets/c05a7e43-b89d-4af7-ab37-ef7f047cf0f4)
-
 **Read more about this project on Medium:**
 
 [Putting a Face to the Voice: Toward Emotionally Responsive AI Avatars (Part 1)](https://medium.com/)
@@ -45,7 +43,7 @@ pnpm install
 ```bash
 pnpm run dev
 ```
-7. The app should now be up at http://localhost:3000
+7. The app should now be up at http://localhost:3000 (you will need to use Google Chrome)
 
 ## Credits
 
