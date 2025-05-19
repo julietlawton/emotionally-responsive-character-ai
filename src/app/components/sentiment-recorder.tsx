@@ -37,14 +37,8 @@ export default function SentimentRecorder({
     // App console logger
     const { addLog } = useLog();
 
-    // // When the user stops speaking, clear the transcript
-    // useEffect(() => {
-    //     if (isUserSpeaking) {
-    //         setUserTranscript("");
-    //     }
-    // }, [isUserSpeaking]);
-
     // Track when user is speaking
+    // When the user stops speaking, clear the transcript
     const isUserSpeakingRef = useRef(isUserSpeaking);
     useEffect(() => {
         isUserSpeakingRef.current = isUserSpeaking;
