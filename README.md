@@ -1,13 +1,15 @@
 # Emotionally Responsive AI Avatars
 The goal of this project is to try to create a Next.js app with AI character avatars that feel emotionally responsive by using machine learning to detect affective signals (emotion, directed sentiment) from the user and map these signals to reactive facial expressions.
 
+![louisa_final](https://github.com/user-attachments/assets/01715003-1490-4db2-bf6a-4f9721d84e73)
+
 **Read more about this project on Medium:**
 
-[Putting a Face to the Voice: Toward Emotionally Responsive AI Avatars (Part 1)](https://medium.com/)
+[Putting a Face to the Voice: Toward Emotionally Responsive AI Avatars (Part 1)](https://medium.com/@julawton.dev/putting-a-face-to-the-voice-toward-emotionally-responsive-ai-avatars-part-1-d38c802d594b)
 
-[Putting a Face to the Voice: Toward Emotionally Responsive AI Avatars (Part 2)](https://medium.com/)
+[Putting a Face to the Voice: Toward Emotionally Responsive AI Avatars (Part 2)](https://medium.com/@julawton.dev/putting-a-face-to-the-voice-toward-emotionally-responsive-ai-avatars-part-2-8fd370f326b2)
 
-[Putting a Face to the Voice: Toward Emotionally Responsive AI Avatars (Part 3)](https://medium.com/)
+[Putting a Face to the Voice: Toward Emotionally Responsive AI Avatars (Part 3)](https://medium.com/@julawton.dev/putting-a-face-to-the-voice-toward-emotionally-responsive-ai-avatars-part-3-4d32db9d3236)
 
 ## Getting Started
 To run the app locally, follow these instructions:
