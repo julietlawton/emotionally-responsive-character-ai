@@ -37,8 +37,17 @@ export default function SentimentRecorder({
     // App console logger
     const { addLog } = useLog();
 
-    // When the user stops speaking, clear the transcript
+    // // When the user stops speaking, clear the transcript
+    // useEffect(() => {
+    //     if (isUserSpeaking) {
+    //         setUserTranscript("");
+    //     }
+    // }, [isUserSpeaking]);
+
+    // Track when user is speaking
+    const isUserSpeakingRef = useRef(isUserSpeaking);
     useEffect(() => {
+        isUserSpeakingRef.current = isUserSpeaking;
         if (isUserSpeaking) {
             setUserTranscript("");
         }
@@ -105,7 +114,7 @@ export default function SentimentRecorder({
                 // Handle incoming transcription
                 live.on(LiveTranscriptionEvents.Transcript, (data: any) => {
                     const transcript = data.channel.alternatives[0].transcript;
-                    if (transcript) {
+                    if (transcript && isUserSpeakingRef.current) {
                         setUserTranscript((t) => t + transcript + " ");
                     }
                 });
